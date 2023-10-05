@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Google Maps API Example</title>
+    <script
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBRXTsGhb7-KK_BKP0wl9kx2vdddSN1F1Y&callback=initMap&libraries=places"
+      async
+      defer
+    ></script>
+    <script src="https://unpkg.com/typed.js@2.0.16/dist/typed.umd.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300&family=Roboto+Mono:wght@300&display=swap");
+    </style>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        outline: none;
+        transition: 0.35s;
+        font-family: "Poppins", sans-serif;
+        font-family: "Roboto Mono", monospace;
+        list-style-type: none;
+      }
+
+      html,
+      body {
+        width: 100vw;
+        height: 100vh;
+        overflow-x: hidden;
+        padding: 5px 0px;
+      }
+
+      header {
+        text-align: center;
+        display: flex;
+        justify-content: space-around;
+      }
+
+      .title {
+        font-size: xx-large;
+
+        background: linear-gradient(
+          45deg,
+          #ff9500 36%,
+          blue 10%,
+          rgb(0, 255, 0)
+        );
+        background-clip: text;
+        -webkit-background-clip: text; /* For Webkit-based browsers */
+        color: transparent; /* Make the text transparent */
+        font-size: 36px; /* Adjust font size as needed */
+        font-weight: bold; /* Adjust font weight as needed */
+      }
+
+      .gradient {
+        background: linear-gradient(
+          45deg,
+          #ff9500 36%,
+          blue 10%,
+          rgb(0, 255, 0)
+        );
+        background-clip: text;
+        -webkit-background-clip: text; /* For Webkit-based browsers */
+        color: transparent; /* Make the text transparent */
+      }
+
+      header input {
+        padding: 15px 10px;
+        width: 60%;
+        text-align: left;
+        border: 0px solid;
+        border-radius: 10px;
+        box-shadow: 0px 0px 10px 0px rgb(216, 227, 236);
+      }
+
+      header input:hover {
+        scale: 1.02;
+      }
+
+      .search {
+        padding: 7px 15px;
+        border: 0px solid;
+        background-color: rgb(0, 183, 255);
+        color: white;
+      }
+
+      #element {
+        height: 50px;
+        text-align: center;
+        font-size: xxx-larger;
+        padding: 10px;
+      }
+
+      .amenities {
+        display: flex;
+        justify-content: space-around;
+        padding: 10px 0px;
+        flex-wrap: wrap;
+      }
+
+      .amenities > div {
+        width: 30%;
+        border: 0px solid;
+        text-align: center;
+        box-shadow: 0px 0px 10px 1px rgb(200, 208, 214);
+      }
+
+      li {
+        border-bottom: 1px solid rgb(210, 230, 247);
+        padding: 5px 0px;
+      }
+
+      .cords {
+        display: flex;
+      }
+
+      .cords * {
+        padding: 5px 5px;
+      }
+
+      button{
+        border-radius: 0px;
+        cursor: pointer;
+        height: 35px; 
+      }
+
+      #latitude,
+      #longitude {
+        font-weight: bold;
+      }
+
+      .search-box{
+        width: 100%;
+        height: 100%;
+      }
+
+      @media only screen and (max-width: 750px) {
+        header input {
+          width: 70%;
+        }
+
+        header{
+          flex-direction: column;
+        }
+
+        .amenities {
+          justify-content: center;
+        }
+
+        .amenities > div {
+          width: 95%;
+          margin-bottom: 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="title">BharatBhraman</div>
+      <div class="search-box"><input type="text" id="addressInput" placeholder="Enter an address" />
+        <button onclick="geocodeAddress()" class="search">Search</button></div>
+    </header>
+    <h1 id="element"></h1>
+
+    <div id="map" style="width: 100%; height: 400px"></div>
+
+    <div class="amenities">
+      <div>
+        <h2>Nearby Restaurants</h2>
+        <ul id="restaurantsList"></ul>
+      </div>
+      <div>
+        <h2>Nearby Hotels</h2>
+        <ul id="hotelsList"></ul>
+      </div>
+      <div>
+        <h2>Places to Visit</h2>
+        <ul id="placesList"></ul>
+      </div>
+    </div>
+
+    <script>
+      function geocodeAddress() {
+        var geocoder = new google.maps.Geocoder();
+        var address = document.getElementById("addressInput").value;
+
+        geocoder.geocode({ address: address }, function (results, status) {
+          if (status === "OK") {
+            var location = results[0].geometry.location;
+            // document.getElementById("latitude").textContent = location.lat();
+            // document.getElementById("longitude").textContent = location.lng();
+
+            // Initialize the map
+            initMap(location.lat(), location.lng());
+          } else {
+            alert(
+              "Geocode was not successful for the following reason: " + status
+            );
+          }
+        });
+      }
+
+      // Inside the initMap function
+      function initMap(latitude, longitude) {
+        var map = new google.maps.Map(document.getElementById("map"), {
+          center: { lat: latitude, lng: longitude },
+          zoom: 18,
+        });
+
+        // Add a marker for the searched location
+        var marker = new google.maps.Marker({
+          position: { lat: latitude, lng: longitude },
+          map: map,
+          title: "Searched Location",
+        });
+
+        var service = new google.maps.places.PlacesService(map);
+
+        // Define the search request for restaurants, hotels, and places to visit
+        var requestRestaurants = {
+          location: { lat: latitude, lng: longitude },
+          radius: 1000,
+          type: "restaurant",
+        };
+
+        var requestHotels = {
+          location: { lat: latitude, lng: longitude },
+          radius: 1000,
+          type: "lodging",
+        };
+
+        var requestPlaces = {
+          location: { lat: latitude, lng: longitude },
+          radius: 1000,
+          type: "tourist_attraction",
+        };
+
+        service.nearbySearch(requestRestaurants, function (results, status) {
+          if (status === google.maps.places.PlacesServiceStatus.OK) {
+            displayPlaces(results, "restaurantsList");
+          }
+        });
+
+        service.nearbySearch(requestHotels, function (results, status) {
+          if (status === google.maps.places.PlacesServiceStatus.OK) {
+            displayPlaces(results, "hotelsList");
+          }
+        });
+
+        service.nearbySearch(requestPlaces, function (results, status) {
+          if (status === google.maps.places.PlacesServiceStatus.OK) {
+            displayPlaces(results, "placesList");
+          }
+        });
+      }
+
+      function displayPlaces(places, elementId) {
+        var list = document.getElementById(elementId);
+        list.innerHTML = "";
+
+        places.forEach(function (place) {
+          var li = document.createElement("li");
+          li.textContent = place.name;
+          li.style.cursor = "pointer"; // Add a pointer cursor to indicate it's clickable
+
+          // Attach a click event listener to each list item
+          li.addEventListener("click", function () {
+            showPlaceOnMap(place);
+          });
+
+          list.appendChild(li);
+        });
+      }
+
+      function showPlaceOnMap(place) {
+        var map = new google.maps.Map(document.getElementById("map"), {
+          center: place.geometry.location,
+          zoom: 18,
+        });
+
+        // Add a marker for the selected place
+        var marker = new google.maps.Marker({
+          position: place.geometry.location,
+          map: map,
+          title: place.name,
+        });
+
+        // Display additional information about the place
+        var infoWindow = new google.maps.InfoWindow({
+          content: `
+      <h2>${place.name}</h2>
+      <p>Address: ${place.vicinity}</p>
+      <p>Phone: ${place.formatted_phone_number || "N/A"}</p>
+      <p>Rating: ${place.rating || "N/A"}</p>
+      <p>Website: <a href="${place.website || "#"}">${
+            place.website || "N/A"
+          }</a></p>
+    `,
+        });
+
+        // Open the info window when the marker is clicked
+        marker.addListener("click", function () {
+          infoWindow.open(map, marker);
+        });
+      }
+    </script>
+
+    <script>
+      var typed = new Typed("#element", {
+        strings: [
+          "Welcome to <span class='gradient'>Bharat Bhraman</span>",
+          "Let's Explore <span class='gradient'>Bharat</span>",
+        ],
+        typeSpeed: 30,
+        loop: false,
+        showCursor: false,
+      });
+    </script>
+  </body>
+</html>
